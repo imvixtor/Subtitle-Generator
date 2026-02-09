@@ -1,67 +1,175 @@
-def segment_results(alignment_result, max_chars=40, max_duration=None):
+import re
+
+def segment_results(alignment_result, original_lyrics, max_chars=40, max_duration=None):
     """
-    Segments the alignment result into subtitles based on constraints.
+    Segments the alignment result into subtitles based on original lyrics and constraints.
     
     Args:
         alignment_result: The result object from stable-ts.
+        original_lyrics (str): The original lyrics text.
         max_chars (int): Maximum characters per subtitle line.
         max_duration (float): Maximum duration in seconds per subtitle line (optional).
         
     Returns:
         list: A list of subtitle segments (start, end, text).
     """
-    # alignment_result is a stable_whisper.result.WhisperResult object
-    # It contains segments, and each segment contains words.
-    # Since we used align(), the structure might slightly differ or needs flattening first.
     
-    # Let's flatten all words from all segments to re-segment them ourselves
+    # 1. Provide a clean version of words for matching
+    # Flatten all words from all segments
     all_words = []
-    for segment in alignment_result.segments:
-        all_words.extend(segment.words)
-        
-    subtitles = []
-    current_line_words = []
-    current_line_chars = 0
+    if hasattr(alignment_result, 'segments'):
+        for segment in alignment_result.segments:
+            all_words.extend(segment.words)
+    else:
+        # Fallback if structure is different (some versions return dict)
+        pass # Assume standard object for now
+
+    # 2. Split original lyrics into lines, processing punctuation as splitting points
+    raw_lines = [line.strip() for line in original_lyrics.split('\n') if line.strip()]
+    processed_lines = []
     
-    for i, word in enumerate(all_words):
-        word_text = word.word.strip()
-        word_len = len(word_text) + 1 # +1 for space
+    for line in raw_lines:
+        # Split by comma or dot if they are in the middle of the line
+        # We want to keep the punctuation attached to the preceding word
+        # "Hello, world." -> ["Hello,", "world."]
+        parts = re.split(r'([,\.])', line)
+        current_part = ""
+        for i in range(0, len(parts) - 1, 2):
+            content = parts[i]
+            punctuation = parts[i+1]
+            segment_str = (content + punctuation).strip()
+            if segment_str:
+                processed_lines.append(segment_str)
         
-        # Check if adding this word exceeds max_chars
-        if current_line_words and (current_line_chars + word_len > max_chars):
-            # Finalize current line
-            start_time = current_line_words[0].start
-            end_time = current_line_words[-1].end
-            text = " ".join([w.word.strip() for w in current_line_words])
-            subtitles.append({
-                'start': start_time,
-                'end': end_time,
-                'text': text
-            })
+        # Handle the last part (or if no split happened)
+        if len(parts) % 2 != 0:
+            last_part = parts[-1].strip()
+            if last_part:
+                processed_lines.append(last_part)
+    
+    # Check if logic above missed simple lines without punctuation splits
+    if not processed_lines and raw_lines:
+         processed_lines = raw_lines
+
+    subtitles = []
+    word_index = 0
+    total_words = len(all_words)
+    
+    def normalize(text):
+        return re.sub(r'[^\w]', '', text.lower())
+
+    for line_text in processed_lines:
+        if word_index >= total_words:
+            break
             
-            # Start new line
-            current_line_words = [word]
-            current_line_chars = word_len
+        # 3. Match words to this line
+        current_line_matched_words = []
+        target_norm = normalize(line_text)
+        current_norm = ""
+        
+        while word_index < total_words:
+            word_obj = all_words[word_index]
+            word_val = word_obj.word.strip()
+            word_norm = normalize(word_val)
+            
+            # Simple check: if current + word is longer than target, and target matches current prefix
+            # check if we should stop.
+            if len(current_norm) >= len(target_norm):
+                 break
+                 
+            current_line_matched_words.append(word_obj)
+            current_norm += word_norm
+            word_index += 1
+        
+        # 4. Process the matched words for this line
+        if not current_line_matched_words:
+            continue
+            
+        full_text = " ".join([w.word.strip() for w in current_line_matched_words])
+        
+        # Ensure proper punctuation if original line had it (it likely does from our split)
+        # But if we split "Hello, world" -> "Hello,", "world"
+        # The alignment might just give "Hello" "world"
+        # matches: "Hello" -> "Hello,". 
+        # If the original line_text ended with punctuation, ensure full_text does too.
+        if line_text[-1] in ',.;:?!' and full_text[-1] not in ',.;:?!':
+            full_text += line_text[-1]
+        elif not full_text.endswith(('.', '?', '!', ',', ';', ':')):
+             full_text += "."
+             
+        # Check max_chars constraint.
+        if len(full_text) > max_chars:
+            buffer_words = []
+            buffer_chars = 0
+            
+            for w in current_line_matched_words:
+                w_len = len(w.word.strip()) + 1
+                if buffer_chars + w_len > max_chars and buffer_words:
+                    subtitles.append({
+                        'start': buffer_words[0].start,
+                        'end': buffer_words[-1].end,
+                        'text': " ".join([bw.word.strip() for bw in buffer_words])
+                    })
+                    buffer_words = [w]
+                    buffer_chars = w_len
+                else:
+                    buffer_words.append(w)
+                    buffer_chars += w_len
+            
+            if buffer_words:
+                 final_sub_text = " ".join([bw.word.strip() for bw in buffer_words])
+                 if final_sub_text.strip() == full_text.split()[-1].strip().rstrip('.,;?!') or \
+                    word_index >= total_words:
+                     if not final_sub_text[-1] in ',.;:?!':
+                         final_sub_text += "."
+                         
+                 subtitles.append({
+                    'start': buffer_words[0].start,
+                    'end': buffer_words[-1].end,
+                    'text': final_sub_text
+                })
         else:
-            current_line_words.append(word)
-            current_line_chars += word_len
-            
-        # Optional: Check for natural pauses (if word has a long silence after it)
-        # This is heuristics-based. For now, we stick to length constraints primarily
-        # unless a major gap is detected.
+            subtitles.append({
+                'start': current_line_matched_words[0].start,
+                'end': current_line_matched_words[-1].end,
+                'text': full_text
+            })
+
+    # 5. Post-processing: Merge short lines
+    merged_subtitles = []
+    if subtitles:
+        merged_subtitles.append(subtitles[0])
         
-    # Append the last line if any
-    if current_line_words:
-        start_time = current_line_words[0].start
-        end_time = current_line_words[-1].end
-        text = " ".join([w.word.strip() for w in current_line_words])
-        subtitles.append({
-            'start': start_time,
-            'end': end_time,
-            'text': text
-        })
+        for i in range(1, len(subtitles)):
+            current = subtitles[i]
+            prev = merged_subtitles[-1]
             
-    return subtitles
+            word_count = len(current['text'].split())
+            
+            # Logic: If <= 2 words, merge with previous
+            if word_count <= 2:
+                # Merge
+                prev['end'] = current['end']
+                
+                # Handling punctuation joining
+                prev_text = prev['text'].strip()
+                current_text = current['text'].strip()
+                
+                # If prev ends with a dot, we might want to remove it if we are merging a continuation?
+                # Case 1: "Hello." + "World." -> "Hello World." (if no pause?)
+                # Case 2: "Hello," + "World." -> "Hello, World."
+                
+                # Heuristic: If current text starts with uppercase, likely a new sentence. Keep dot.
+                # If lowercase, likely continuation. Remove dot from prev if present.
+                
+                if current_text and current_text[0].islower() and prev_text.endswith('.'):
+                    prev_text = prev_text[:-1] # Remove trailing dot
+                    
+                prev['text'] = prev_text + " " + current_text
+            else:
+                merged_subtitles.append(current)
+
+    return merged_subtitles
 
 def save_to_srt(subtitles, output_path):
     """

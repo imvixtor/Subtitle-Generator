@@ -21,9 +21,23 @@ def main():
         print(f"Error: Lyrics file not found: {args.lyrics}")
         return
         
+    # Validate lyrics file extension
+    if not args.lyrics.lower().endswith(('.txt', '.lrc', '.srt')):
+        print(f"Warning: Lyrics file '{args.lyrics}' does not have a standard text extension (.txt, .lrc, .srt).")
+        print("Please ensure this is a text file containing the lyrics.")
+
     # Read lyrics
-    with open(args.lyrics, 'r', encoding='utf-8') as f:
-        lyrics_text = f.read()
+    try:
+        with open(args.lyrics, 'r', encoding='utf-8') as f:
+            lyrics_text = f.read()
+    except UnicodeDecodeError:
+        print(f"Error: Could not read lyrics file '{args.lyrics}'.")
+        print("It appears to be a binary file or not UTF-8 encoded.")
+        print("Please provide a valid text file (e.g. .txt) containing the lyrics.")
+        return
+    except Exception as e:
+        print(f"Error reading lyrics file: {e}")
+        return
         
     print(f"Aligning audio: {args.audio} with lyrics...")
     try:
@@ -33,7 +47,7 @@ def main():
         return
         
     print("Alignment complete. Segmenting...")
-    subtitles = segment_results(result, max_chars=args.max_len)
+    subtitles = segment_results(result, lyrics_text, max_chars=args.max_len)
     
     print(f"Saving to {args.output}...")
     save_to_srt(subtitles, args.output)
