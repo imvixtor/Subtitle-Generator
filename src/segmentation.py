@@ -135,36 +135,62 @@ def segment_results(alignment_result, original_lyrics, max_chars=40, max_duratio
                 'text': full_text
             })
 
-    # 5. Post-processing: Merge short lines
+    # 5. Post-processing: Merge short lines / split punctuation parts
     merged_subtitles = []
     if subtitles:
+        # Initial pass to handle punctuation splits that are too short
+        # We look at the subtitles and see if we can merge them back
+        
+        # Helper to decide if we should merge
+        def should_merge(prev, current, max_chars):
+             # 1. Punctuation split check
+             # If prev ends with punctuation that triggered a split (comma, dot)
+             # And combined length <= max_chars
+             
+             # Also cover the "really short line" case (word_count <= 2) even if it exceeds max_chars slightly?
+             # User said: "nếu một dòng chỉ có một (hoặc 2) từ thì cho phép gộp với dòng trước đó (bất chấp độ dài tối đa)"
+             # User also said: "nếu 2 câu gốc được ngăn cách bởi dấu "," hoặc dấu "." mà khi ghép lại có độ dài ngắn hơn độ dài mong muốn thì vẫn ghép vào"
+             
+             prev_text = prev['text'].strip()
+             current_text = current['text'].strip()
+             combined_len = len(prev_text) + 1 + len(current_text)
+             word_count = len(current_text.split())
+             
+             # Rule A: Very short line (<=2 words) -> Merge ALWAYS (User request)
+             if word_count <= 2:
+                 return True
+                 
+             # Rule B: Punctuation split -> Merge if fits max_chars
+             # We assume these segments came from the same original context or are sequential
+             if combined_len <= max_chars:
+                 return True
+                 
+             return False
+
         merged_subtitles.append(subtitles[0])
         
         for i in range(1, len(subtitles)):
             current = subtitles[i]
             prev = merged_subtitles[-1]
             
-            word_count = len(current['text'].split())
-            
-            # Logic: If <= 2 words, merge with previous
-            if word_count <= 2:
+            if should_merge(prev, current, max_chars):
                 # Merge
                 prev['end'] = current['end']
                 
-                # Handling punctuation joining
                 prev_text = prev['text'].strip()
                 current_text = current['text'].strip()
                 
-                # If prev ends with a dot, we might want to remove it if we are merging a continuation?
-                # Case 1: "Hello." + "World." -> "Hello World." (if no pause?)
-                # Case 2: "Hello," + "World." -> "Hello, World."
+                # Handling punctuation/case when merging
+                # If we merged because fit in max_chars (Rule B), we might want to keep the punctuation.
+                # "Hello," + "world." -> "Hello, world."
                 
-                # Heuristic: If current text starts with uppercase, likely a new sentence. Keep dot.
-                # If lowercase, likely continuation. Remove dot from prev if present.
+                # If we merged because Rule A (short line), we might want to check the dot.
+                # "Hello." + "There." (There is short) -> "Hello. There."
                 
+                # Special check for the "lower case continuation" logic
                 if current_text and current_text[0].islower() and prev_text.endswith('.'):
-                    prev_text = prev_text[:-1] # Remove trailing dot
-                    
+                     prev_text = prev_text[:-1]
+
                 prev['text'] = prev_text + " " + current_text
             else:
                 merged_subtitles.append(current)
