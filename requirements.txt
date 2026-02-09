@@ -1,0 +1,3 @@
+stable-ts
+openai-whisper
+streamlit

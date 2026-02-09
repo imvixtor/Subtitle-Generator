@@ -64,8 +64,21 @@ Nếu bạn muốn thay đổi mô hình (mặc định là `base`) trong file `
     pip install stable-ts
     ```
 
-## Cách Sử Dụng
+## Cách Sử Dụng (Giao Diện Web)
 
+Nếu bạn không thích dùng dòng lệnh, bạn có thể chạy giao diện web:
+
+1.  Cài đặt thêm thư viện (chỉ cần làm 1 lần):
+    ```bash
+    pip install streamlit
+    ```
+2.  Chạy ứng dụng:
+    ```bash
+    streamlit run app.py
+    ```
+3.  Trình duyệt sẽ tự động mở ra. Bạn chỉ cần upload file và bấm nút!
+
+## Cách Sử Dụng (Dòng Lệnh)
 Chạy ứng dụng bằng câu lệnh sau:
 
 ```bash
