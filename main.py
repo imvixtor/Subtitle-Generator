@@ -10,6 +10,8 @@ def main():
     parser.add_argument("--output", required=True, help="Path to audio output SRT file")
     parser.add_argument("--max_len", type=int, default=40, help="Maximum characters per line")
     parser.add_argument("--language", default="vi", help="Language code (default: vi)")
+    parser.add_argument("--model", default="base", choices=["tiny", "base", "small", "medium", "large"], 
+                        help="Whisper model size (default: base)")
     
     args = parser.parse_args()
     
@@ -39,9 +41,9 @@ def main():
         print(f"Error reading lyrics file: {e}")
         return
         
-    print(f"Aligning audio: {args.audio} with lyrics...")
+    print(f"Aligning audio: {args.audio} with lyrics using model '{args.model}'...")
     try:
-        result = align_audio_lyrics(args.audio, lyrics_text, language=args.language)
+        result = align_audio_lyrics(args.audio, lyrics_text, language=args.language, model_name=args.model)
     except Exception as e:
         print(f"Error during alignment: {e}")
         return
