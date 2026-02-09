@@ -26,15 +26,20 @@ Cấu hình này giúp xử lý nhanh chóng (gần như tức thì hoặc trong
 ## Phần Mềm Yêu Cầu
 1.  **Python 3.8** trở lên.
 2.  **FFmpeg**: Cần được cài đặt để xử lý file âm thanh.
-    -   *Windows*: Tải từ [gyan.dev](https://www.gyan.dev/ffmpeg/builds/), giải nén và thêm thư mục `bin` vào PATH.
+    -   *Windows (chocolatey)*: `choco install ffmpeg`
+    -   *Windows (manual)*: Tải từ [gyan.dev](https://www.gyan.dev/ffmpeg/builds/), giải nén và thêm thư mục `bin` vào PATH.
     -   *Mac/Linux*: Cài qua brew hoặc apt (`brew install ffmpeg` hoặc `sudo apt install ffmpeg`).
 
 ## Cài Đặt
 
 1.  Mở terminal tại thư mục dự án.
-2.  Cài đặt các thư viện cần thiết:
+2.  Cài đặt các thư viện cần thiết (chạy lần lượt các lệnh sau):
     ```bash
-    pip install -r requirements.txt
+    python -m venv .venv
+    .\.venv\Scripts\activate
+    python.exe -m pip install --upgrade pip
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+    pip install stable-ts
     ```
 
 ## Cách Sử Dụng
