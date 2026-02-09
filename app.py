@@ -5,9 +5,9 @@ import tempfile
 from src.alignment import align_audio_lyrics
 from src.segmentation import segment_results, save_to_srt
 
-st.set_page_config(page_title="Auto-Subtitle Generator", page_icon="🎵")
+st.set_page_config(page_title="Subtitle Generator", page_icon="icon.svg")
 
-st.title("🎵 Auto-Subtitle Generator")
+st.title("Auto Subtitle Generator")
 st.markdown("Create synchronized subtitles (SRT) from Audio + Lyrics text using AI.")
 
 # Sidebar configuration
