@@ -2,10 +2,30 @@
 
 Đây là ứng dụng dòng lệnh (CLI) giúp bạn đồng bộ hóa lời bài hát (lyrics) với file âm thanh (audio) để tạo ra file phụ đề chuẩn (SRT). Ứng dụng sử dụng mô hình AI `stable-ts` (dựa trên OpenAI Whisper) để đạt độ chính xác cao và hỗ trợ chia nhỏ phụ đề theo độ dài mong muốn.
 
-## Yêu Cầu Hệ Thống
+## Yêu Cầu Hệ Thống (System Requirements)
 
+Ứng dụng chạy trên mô hình AI nên tốc độ xử lý phụ thuộc lớn vào cấu hình máy tính của bạn.
+
+### 1. Cấu Hình Tối Thiểu (Có Thể Chạy Được)
+Đây là cấu hình để chạy được ứng dụng, nhưng tốc độ có thể chậm (xử lý 1 bài hát 5 phút có thể mất 2-5 phút).
+-   **CPU**: Intel Core i5 (đời 8 trở lên) hoặc AMD Ryzen 5 tương đương.
+-   **RAM**: 8 GB.
+-   **GPU (Card Màn Hình)**: Không bắt buộc (chạy bằng CPU).
+-   **Ổ Cứng**: Hỗ trợ SSD (khuyến khích) để load model nhanh hơn.
+-   **Hệ Điều Hành**: Windows 10/11, macOS, Linux.
+
+### 2. Cấu Hình Khuyến Nghị (Chạy Mượt)
+Cấu hình này giúp xử lý nhanh chóng (gần như tức thì hoặc trong vài chục giây cho 1 bài hát).
+-   **CPU**: Intel Core i7 / AMD Ryzen 7 trở lên.
+-   **RAM**: 16 GB trở lên.
+-   **GPU (Card Màn Hình)**: NVIDIA GPU với ít nhất **4GB VRAM** (VRAM càng cao càng tốt, ví dụ GTX 1650, RTX 2060 trở lên). *Lưu ý: Cần cài đặt CUDA để chạy bằng GPU.*
+-   **Ổ Cứng**: SSD.
+
+> **Lưu ý**: Nếu máy bạn không có GPU rời, ứng dụng vẫn chạy tốt nhưng sẽ sử dụng CPU, tốc độ sẽ chậm hơn đáng kể.
+
+## Phần Mềm Yêu Cầu
 1.  **Python 3.8** trở lên.
-2.  **FFmpeg**: Cần được cài đặt và thêm vào biến môi trường (PATH) của hệ thống.
+2.  **FFmpeg**: Cần được cài đặt để xử lý file âm thanh.
     -   *Windows*: Tải từ [gyan.dev](https://www.gyan.dev/ffmpeg/builds/), giải nén và thêm thư mục `bin` vào PATH.
     -   *Mac/Linux*: Cài qua brew hoặc apt (`brew install ffmpeg` hoặc `sudo apt install ffmpeg`).
 
