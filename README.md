@@ -11,7 +11,9 @@
 -   **CPU**: Intel Core i5 (đời 8 trở lên) hoặc AMD Ryzen 5 tương đương.
 -   **RAM**: 8 GB.
 -   **GPU (Card Màn Hình)**: Không bắt buộc (chạy bằng CPU).
--   **Ổ Cứng**: Hỗ trợ SSD (khuyến khích) để load model nhanh hơn.
+-   **Mô Hình (Model phù hợp)**: `tiny` hoặc `base`.
+    -   `tiny`: Chạy nhanh nhất trên CPU, nhưng độ chính xác thấp hơn.
+    -   `base` (mặc định): Chạy ổn trên CPU hiện đại, tuy nhiên sẽ hơi chậm.
 -   **Hệ Điều Hành**: Windows 10/11, macOS, Linux.
 
 ### 2. Cấu Hình Khuyến Nghị (Chạy Mượt)
@@ -19,7 +21,27 @@ Cấu hình này giúp xử lý nhanh chóng (gần như tức thì hoặc trong
 -   **CPU**: Intel Core i7 / AMD Ryzen 7 trở lên.
 -   **RAM**: 16 GB trở lên.
 -   **GPU (Card Màn Hình)**: NVIDIA GPU với ít nhất **4GB VRAM** (VRAM càng cao càng tốt, ví dụ GTX 1650, RTX 2060 trở lên). *Lưu ý: Cần cài đặt CUDA để chạy bằng GPU.*
+-   **Mô Hình (Model phù hợp)**: `base`, `small`, hoặc `medium`.
+    -   `base` (mặc định): Xử lý siêu tốc (vài giây).
+    -   `small`: Chính xác hơn `base`, tốc độ vẫn rất nhanh trên GPU.
+    -   `medium`: Độ chính xác rất cao, yêu cầu VRAM khoảng 5GB.
 -   **Ổ Cứng**: SSD.
+
+> **Lưu ý**: Nếu máy bạn không có GPU rời, ứng dụng vẫn chạy tốt nhưng sẽ sử dụng CPU, tốc độ sẽ chậm hơn đáng kể.
+
+### 3. Thông Tin Chi Tiết Từng Mô Hình AI (Model Details)
+
+Nếu bạn muốn thay đổi mô hình (mặc định là `base`) trong file `src/alignment.py`, hãy tham khảo bảng thông số dưới đây để chọn loại phù hợp với máy của mình:
+
+| Model | VRAM Yêu Cầu (GPU) | RAM Yêu Cầu (CPU) | Tốc Độ | Độ Chính Xác | Khuyên Dùng Cho |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **tiny** | ~1 GB | ~2 GB | Rất Nhanh | Trung bình | Máy cấu hình yếu, cần tốc độ cực nhanh. |
+| **base** | ~1 GB | ~2 GB | Nhanh | Khá | **Mặc định**. Cân bằng tốt nhất cho hầu hết người dùng. |
+| **small** | ~2 GB | ~4 GB | Trung bình | Tốt | Máy có GPU tầm trung (GTX 1050 trở lên). Cần độ chính xác cao hơn base. |
+| **medium** | ~5 GB | ~8 GB | Chậm | Rất tốt | Máy có GPU mạnh (RTX 2060, 3060...). Dùng cho audio khó nghe, lẫn nhiều tạp âm. |
+| **large** | ~10 GB | ~16 GB | Rất chậm | Tốt nhất | Máy trạm chuyên nghiệp (RTX 3080/4090). Đòi hỏi độ chính xác tuyệt đối. |
+
+> **Lưu ý**: Dung lượng trên là ước tính. Nếu chạy trên CPU, thời gian xử lý sẽ lâu hơn nhiều (gấp 5-10 lần) so với GPU.
 
 > **Lưu ý**: Nếu máy bạn không có GPU rời, ứng dụng vẫn chạy tốt nhưng sẽ sử dụng CPU, tốc độ sẽ chậm hơn đáng kể.
 
