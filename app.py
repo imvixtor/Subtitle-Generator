@@ -23,7 +23,7 @@ max_len = st.sidebar.number_input(
     "Max Characters per Line",
     min_value=10,
     max_value=100,
-    value=40,
+    value=30,
     step=1,
     help="Maximum length of a subtitle line before splitting."
 )

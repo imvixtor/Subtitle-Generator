@@ -8,7 +8,7 @@ def main():
     parser.add_argument("--audio", required=True, help="Path to the audio file")
     parser.add_argument("--lyrics", required=True, help="Path to the lyrics text file")
     parser.add_argument("--output", required=True, help="Path to audio output SRT file")
-    parser.add_argument("--max_len", type=int, default=40, help="Maximum characters per line")
+    parser.add_argument("--max_len", type=int, default=30, help="Maximum characters per line")
     parser.add_argument("--language", default="vi", help="Language code (default: vi)")
     parser.add_argument("--model", default="base", choices=["tiny", "base", "small", "medium", "large"], 
                         help="Whisper model size (default: base)")
