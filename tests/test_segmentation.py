@@ -46,14 +46,40 @@ class TestSegmentation(unittest.TestCase):
         self.assertEqual(subtitles[0]['start'], 0.0)
         self.assertEqual(subtitles[0]['end'], 2.0)
         
+        # Verify word-level timings are present
+        self.assertEqual(len(subtitles[0]['words']), 2)
+        self.assertEqual(subtitles[0]['words'][0]['text'], "Hello")
+        self.assertEqual(subtitles[0]['words'][0]['start'], 0.0)
+        self.assertEqual(subtitles[0]['words'][0]['end'], 1.0)
+        self.assertEqual(subtitles[0]['words'][1]['text'], "world")
+        self.assertEqual(subtitles[0]['words'][1]['start'], 1.0)
+        self.assertEqual(subtitles[0]['words'][1]['end'], 2.0)
+        
         self.assertEqual(subtitles[1]['text'], "today")
         self.assertEqual(subtitles[1]['start'], 2.0)
         self.assertEqual(subtitles[1]['end'], 3.0)
+        
+        self.assertEqual(len(subtitles[1]['words']), 1)
+        self.assertEqual(subtitles[1]['words'][0]['text'], "today")
+        self.assertEqual(subtitles[1]['words'][0]['start'], 2.0)
+        self.assertEqual(subtitles[1]['words'][0]['end'], 3.0)
 
     def test_ass_formatting(self):
         subs = [
-            {'start': 1.25, 'end': 4.88, 'text': 'Hello world'},
-            {'start': 75.0, 'end': 80.5, 'text': 'Line 2\nWith newline'}
+            {
+                'start': 1.25, 
+                'end': 4.88, 
+                'text': 'Hello world',
+                'words': [
+                    {'start': 1.25, 'end': 2.0, 'text': 'Hello'},
+                    {'start': 2.5, 'end': 4.88, 'text': 'world'}
+                ]
+            },
+            {
+                'start': 75.0, 
+                'end': 80.5, 
+                'text': 'Line 2\nWith newline'
+            }
         ]
         
         ass_str = subtitles_to_ass_string(subs)
@@ -64,11 +90,14 @@ class TestSegmentation(unittest.TestCase):
         self.assertIn("[Events]", ass_str)
         
         # Check Dialogue lines and timing formats
-        # 1.25 -> 0:00:01.25, 4.88 -> 0:00:04.88
-        self.assertIn("Dialogue: 0,0:00:01.25,0:00:04.88,Default,,0,0,0,,Hello world", ass_str)
+        # Hello duration: 2.0 - 1.25 = 0.75s -> {\k75}
+        # Gap: 2.5 - 2.0 = 0.50s -> {\k50}
+        # world duration: 4.88 - 2.5 = 2.38s -> {\k238}
+        self.assertIn("Dialogue: 0,0:00:01.25,0:00:04.88,Default,,0,0,0,,{\\k75}Hello {\\k50}{\\k238}world", ass_str)
         
         # 75.0 -> 0:01:15.00
         # 80.5 -> 0:01:20.50
+        # Without words, falls back to text with \N
         self.assertIn("Dialogue: 0,0:01:15.00,0:01:20.50,Default,,0,0,0,,Line 2\\NWith newline", ass_str)
 
 if __name__ == '__main__':

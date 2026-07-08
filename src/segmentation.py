@@ -79,10 +79,18 @@ def segment_results(alignment_result, original_lyrics, max_chars=30, max_duratio
                 
                 if buffer_chars + w_len > max_chars and buffer_display:
                     # Flush current buffer as a subtitle
+                    words_list = []
+                    for display_w, aligned_w in zip(buffer_display, buffer_aligned):
+                        words_list.append({
+                            'start': aligned_w.start,
+                            'end': aligned_w.end,
+                            'text': display_w
+                        })
                     subtitles.append({
                         'start': buffer_aligned[0].start,
                         'end': buffer_aligned[-1].end,
-                        'text': " ".join(buffer_display)
+                        'text': " ".join(buffer_display),
+                        'words': words_list
                     })
                     buffer_display = [display_word]
                     buffer_aligned = [current_line_matched_words[min(aligned_idx, len(current_line_matched_words) - 1)]]
@@ -95,16 +103,34 @@ def segment_results(alignment_result, original_lyrics, max_chars=30, max_duratio
                 aligned_idx += 1
             
             if buffer_display:
+                words_list = []
+                for display_w, aligned_w in zip(buffer_display, buffer_aligned):
+                    words_list.append({
+                        'start': aligned_w.start,
+                        'end': aligned_w.end,
+                        'text': display_w
+                    })
                 subtitles.append({
                     'start': buffer_aligned[0].start,
                     'end': buffer_aligned[-1].end,
-                    'text': " ".join(buffer_display)
+                    'text': " ".join(buffer_display),
+                    'words': words_list
                 })
         else:
+            words_list = []
+            line_words = full_text.split()
+            for i, display_w in enumerate(line_words):
+                aligned_w = current_line_matched_words[min(i, len(current_line_matched_words) - 1)]
+                words_list.append({
+                    'start': aligned_w.start,
+                    'end': aligned_w.end,
+                    'text': display_w
+                })
             subtitles.append({
                 'start': current_line_matched_words[0].start,
                 'end': current_line_matched_words[-1].end,
-                'text': full_text
+                'text': full_text,
+                'words': words_list
             })
 
     return subtitles
@@ -168,7 +194,32 @@ def subtitles_to_ass_string(subtitles):
     for sub in subtitles:
         start_t = format_ass_timestamp(sub['start'])
         end_t = format_ass_timestamp(sub['end'])
-        text = sub['text'].replace('\n', '\\N')
+        
+        # Format text with word-level timing (karaoke style) if 'words' list is available
+        if 'words' in sub and sub['words']:
+            karaoke_text = ""
+            current_time = sub['start']
+            for w in sub['words']:
+                w_start = w['start']
+                w_end = w['end']
+                w_text = w['text']
+                
+                # Check for gap before the word
+                gap_cs = int(round((w_start - current_time) * 100))
+                if gap_cs > 0:
+                    karaoke_text += f"{{\\k{gap_cs}}}"
+                
+                # Word duration
+                duration_cs = int(round((w_end - w_start) * 100))
+                if duration_cs <= 0:
+                    duration_cs = 1
+                
+                karaoke_text += f"{{\\k{duration_cs}}}{w_text} "
+                current_time = w_end
+            text = karaoke_text.strip()
+        else:
+            text = sub['text'].replace('\n', '\\N')
+            
         ass_lines.append(f"Dialogue: 0,{start_t},{end_t},Default,,0,0,0,,{text}")
     
     return "\n".join(ass_lines) + "\n"
