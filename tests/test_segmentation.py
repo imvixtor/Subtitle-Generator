@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from unittest.mock import MagicMock
-from src.segmentation import segment_results
+from src.segmentation import segment_results, subtitles_to_ass_string
 
 class TestSegmentation(unittest.TestCase):
     def test_segmentation_logic(self):
@@ -39,7 +39,7 @@ class TestSegmentation(unittest.TestCase):
         mock_segment.words = words
         mock_result.segments = [mock_segment]
         
-        subtitles = segment_results(mock_result, max_chars=12)
+        subtitles = segment_results(mock_result, "Hello world today", max_chars=12)
         
         self.assertEqual(len(subtitles), 2)
         self.assertEqual(subtitles[0]['text'], "Hello world")
@@ -50,5 +50,27 @@ class TestSegmentation(unittest.TestCase):
         self.assertEqual(subtitles[1]['start'], 2.0)
         self.assertEqual(subtitles[1]['end'], 3.0)
 
+    def test_ass_formatting(self):
+        subs = [
+            {'start': 1.25, 'end': 4.88, 'text': 'Hello world'},
+            {'start': 75.0, 'end': 80.5, 'text': 'Line 2\nWith newline'}
+        ]
+        
+        ass_str = subtitles_to_ass_string(subs)
+        
+        # Check standard headers
+        self.assertIn("[Script Info]", ass_str)
+        self.assertIn("[V4+ Styles]", ass_str)
+        self.assertIn("[Events]", ass_str)
+        
+        # Check Dialogue lines and timing formats
+        # 1.25 -> 0:00:01.25, 4.88 -> 0:00:04.88
+        self.assertIn("Dialogue: 0,0:00:01.25,0:00:04.88,Default,,0,0,0,,Hello world", ass_str)
+        
+        # 75.0 -> 0:01:15.00
+        # 80.5 -> 0:01:20.50
+        self.assertIn("Dialogue: 0,0:01:15.00,0:01:20.50,Default,,0,0,0,,Line 2\\NWith newline", ass_str)
+
 if __name__ == '__main__':
     unittest.main()
+

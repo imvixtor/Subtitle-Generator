@@ -1,13 +1,16 @@
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 import argparse
 import os
 from src.alignment import align_audio_lyrics
-from src.segmentation import segment_results, save_to_srt
+from src.segmentation import segment_results, save_to_srt, save_to_ass
 
 def main():
     parser = argparse.ArgumentParser(description="Forced Alignment and Subtitle Generator")
     parser.add_argument("--audio", required=True, help="Path to the audio file")
     parser.add_argument("--lyrics", required=True, help="Path to the lyrics text file")
-    parser.add_argument("--output", required=True, help="Path to audio output SRT file")
+    parser.add_argument("--output", required=True, help="Path to output file (.srt or .ass)")
     parser.add_argument("--max_len", type=int, default=30, help="Maximum characters per line")
     parser.add_argument("--language", default="vi", help="Language code (default: vi)")
     parser.add_argument("--model", default="base", choices=["tiny", "base", "small", "medium", "large"], 
@@ -52,7 +55,10 @@ def main():
     subtitles = segment_results(result, lyrics_text, max_chars=args.max_len)
     
     print(f"Saving to {args.output}...")
-    save_to_srt(subtitles, args.output)
+    if args.output.lower().endswith('.ass'):
+        save_to_ass(subtitles, args.output)
+    else:
+        save_to_srt(subtitles, args.output)
     print("Done!")
 
 if __name__ == "__main__":

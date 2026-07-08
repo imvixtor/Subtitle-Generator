@@ -1,9 +1,12 @@
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 import streamlit as st
 import os
 import tempfile
 from src.alignment import align_audio_lyrics
-from src.segmentation import segment_results, save_to_srt
+from src.segmentation import segment_results, save_to_srt, subtitles_to_ass_string
 
 st.set_page_config(page_title="Subtitle Generator", page_icon="icon.svg")
 
@@ -29,6 +32,13 @@ max_len = st.sidebar.number_input(
 )
 
 language = st.sidebar.text_input("Language Code", value="vi", help="e.g., 'vi', 'en', 'ja'")
+
+export_format = st.sidebar.selectbox(
+    "Export Format",
+    options=["SRT", "ASS", "Both"],
+    index=0,
+    help="Select the format for the generated subtitles."
+)
 
 # Main interface
 col1, col2 = st.columns(2)
@@ -83,19 +93,49 @@ if audio_file and lyrics_file:
                     return output
 
                 srt_content = subtitles_to_srt_string(subtitles)
+                ass_content = subtitles_to_ass_string(subtitles)
                 
                 st.success("Analysis Complete!")
                 
-                # Display result
-                st.text_area("Generated Subtitles (SRT):", value=srt_content, height=300)
+                base_filename = os.path.splitext(audio_file.name)[0]
                 
-                # Download button
-                st.download_button(
-                    label="Download .SRT File",
-                    data=srt_content,
-                    file_name=os.path.splitext(audio_file.name)[0] + ".srt",
-                    mime="text/plain"
-                )
+                # Display result based on format
+                if export_format == "SRT":
+                    st.text_area("Generated Subtitles (SRT):", value=srt_content, height=300)
+                    st.download_button(
+                        label="Download .SRT File",
+                        data=srt_content,
+                        file_name=base_filename + ".srt",
+                        mime="text/plain"
+                    )
+                elif export_format == "ASS":
+                    st.text_area("Generated Subtitles (ASS):", value=ass_content, height=300)
+                    st.download_button(
+                        label="Download .ASS File",
+                        data=ass_content,
+                        file_name=base_filename + ".ass",
+                        mime="text/plain"
+                    )
+                else: # Both
+                    tab1, tab2 = st.tabs(["SRT Subtitles", "ASS Subtitles"])
+                    with tab1:
+                        st.text_area("Generated Subtitles (SRT):", value=srt_content, height=300, key="srt_preview")
+                        st.download_button(
+                            label="Download .SRT File",
+                            data=srt_content,
+                            file_name=base_filename + ".srt",
+                            mime="text/plain",
+                            key="srt_download"
+                        )
+                    with tab2:
+                        st.text_area("Generated Subtitles (ASS):", value=ass_content, height=300, key="ass_preview")
+                        st.download_button(
+                            label="Download .ASS File",
+                            data=ass_content,
+                            file_name=base_filename + ".ass",
+                            mime="text/plain",
+                            key="ass_download"
+                        )
                 
                 # Cleanup temp file
                 os.remove(tmp_audio_path)
