@@ -10,6 +10,18 @@ from src.segmentation import segment_results, save_to_srt, subtitles_to_ass_stri
 
 st.set_page_config(page_title="Subtitle Generator", page_icon="icon.svg")
 
+# Initialize session state variables
+if "subtitles" not in st.session_state:
+    st.session_state.subtitles = None
+if "srt_content" not in st.session_state:
+    st.session_state.srt_content = None
+if "ass_content" not in st.session_state:
+    st.session_state.ass_content = None
+if "prev_audio_name" not in st.session_state:
+    st.session_state.prev_audio_name = None
+if "prev_lyrics_content" not in st.session_state:
+    st.session_state.prev_lyrics_content = None
+
 st.title("Auto Subtitle Generator")
 st.markdown("Create synchronized subtitles (SRT) from Audio + Lyrics text using AI.")
 
@@ -62,6 +74,15 @@ if audio_file and lyrics_file:
         st.error(f"Error reading lyrics file. Make sure it is UTF-8 encoded. Detail: {e}")
         st.stop()
         
+    # Check if files changed to reset state
+    if st.session_state.prev_audio_name != audio_file.name:
+        st.session_state.subtitles = None
+        st.session_state.prev_audio_name = audio_file.name
+        
+    if st.session_state.prev_lyrics_content != lyrics_text:
+        st.session_state.subtitles = None
+        st.session_state.prev_lyrics_content = lyrics_text
+        
     if st.button("Generate Subtitles", type="primary"):
         with st.spinner(f"Aligning audio with model '{model_type}'... This may take a while."):
             try:
@@ -92,50 +113,11 @@ if audio_file and lyrics_file:
                         output += f"{sub['text']}\n\n"
                     return output
 
-                srt_content = subtitles_to_srt_string(subtitles)
-                ass_content = subtitles_to_ass_string(subtitles)
+                st.session_state.srt_content = subtitles_to_srt_string(subtitles)
+                st.session_state.ass_content = subtitles_to_ass_string(subtitles)
+                st.session_state.subtitles = subtitles
                 
                 st.success("Analysis Complete!")
-                
-                base_filename = os.path.splitext(audio_file.name)[0]
-                
-                # Display result based on format
-                if export_format == "SRT":
-                    st.text_area("Generated Subtitles (SRT):", value=srt_content, height=300)
-                    st.download_button(
-                        label="Download .SRT File",
-                        data=srt_content,
-                        file_name=base_filename + ".srt",
-                        mime="text/plain"
-                    )
-                elif export_format == "ASS":
-                    st.text_area("Generated Subtitles (ASS):", value=ass_content, height=300)
-                    st.download_button(
-                        label="Download .ASS File",
-                        data=ass_content,
-                        file_name=base_filename + ".ass",
-                        mime="text/plain"
-                    )
-                else: # Both
-                    tab1, tab2 = st.tabs(["SRT Subtitles", "ASS Subtitles"])
-                    with tab1:
-                        st.text_area("Generated Subtitles (SRT):", value=srt_content, height=300, key="srt_preview")
-                        st.download_button(
-                            label="Download .SRT File",
-                            data=srt_content,
-                            file_name=base_filename + ".srt",
-                            mime="text/plain",
-                            key="srt_download"
-                        )
-                    with tab2:
-                        st.text_area("Generated Subtitles (ASS):", value=ass_content, height=300, key="ass_preview")
-                        st.download_button(
-                            label="Download .ASS File",
-                            data=ass_content,
-                            file_name=base_filename + ".ass",
-                            mime="text/plain",
-                            key="ass_download"
-                        )
                 
                 # Cleanup temp file
                 os.remove(tmp_audio_path)
@@ -144,3 +126,47 @@ if audio_file and lyrics_file:
                 st.error(f"An error occurred: {e}")
                 if 'tmp_audio_path' in locals() and os.path.exists(tmp_audio_path):
                      os.remove(tmp_audio_path)
+
+    # Render results (outside of st.button block) if subtitles are loaded in session state
+    if st.session_state.subtitles is not None:
+        srt_content = st.session_state.srt_content
+        ass_content = st.session_state.ass_content
+        base_filename = os.path.splitext(audio_file.name)[0]
+        
+        # Display result based on format
+        if export_format == "SRT":
+            st.text_area("Generated Subtitles (SRT):", value=srt_content, height=300)
+            st.download_button(
+                label="Download .SRT File",
+                data=srt_content,
+                file_name=base_filename + ".srt",
+                mime="text/plain"
+            )
+        elif export_format == "ASS":
+            st.text_area("Generated Subtitles (ASS):", value=ass_content, height=300)
+            st.download_button(
+                label="Download .ASS File",
+                data=ass_content,
+                file_name=base_filename + ".ass",
+                mime="text/plain"
+            )
+        else: # Both
+            tab1, tab2 = st.tabs(["SRT Subtitles", "ASS Subtitles"])
+            with tab1:
+                st.text_area("Generated Subtitles (SRT):", value=srt_content, height=300, key="srt_preview")
+                st.download_button(
+                    label="Download .SRT File",
+                    data=srt_content,
+                    file_name=base_filename + ".srt",
+                    mime="text/plain",
+                    key="srt_download"
+                )
+            with tab2:
+                st.text_area("Generated Subtitles (ASS):", value=ass_content, height=300, key="ass_preview")
+                st.download_button(
+                    label="Download .ASS File",
+                    data=ass_content,
+                    file_name=base_filename + ".ass",
+                    mime="text/plain",
+                    key="ass_download"
+                )
