@@ -214,7 +214,7 @@ def subtitles_to_ass_string(subtitles):
                 if duration_cs <= 0:
                     duration_cs = 1
                 
-                karaoke_text += f"{{\\k{duration_cs}}}{w_text} "
+                karaoke_text += f"{{\\kf{duration_cs}}}{w_text} "
                 current_time = w_end
             text = karaoke_text.strip()
         else:

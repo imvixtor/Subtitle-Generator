@@ -93,7 +93,7 @@ class TestSegmentation(unittest.TestCase):
         # Hello duration: 2.0 - 1.25 = 0.75s -> {\k75}
         # Gap: 2.5 - 2.0 = 0.50s -> {\k50}
         # world duration: 4.88 - 2.5 = 2.38s -> {\k238}
-        self.assertIn("Dialogue: 0,0:00:01.25,0:00:04.88,Default,,0,0,0,,{\\k75}Hello {\\k50}{\\k238}world", ass_str)
+        self.assertIn("Dialogue: 0,0:00:01.25,0:00:04.88,Default,,0,0,0,,{\\kf75}Hello {\\k50}{\\kf238}world", ass_str)
         
         # 75.0 -> 0:01:15.00
         # 80.5 -> 0:01:20.50
